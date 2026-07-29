@@ -1,0 +1,92 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model WorkoutCategory {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  icon      String?
+  workouts  Workout[]
+  createdAt DateTime  @default(now())
+}
+
+model Trainer {
+  id       String    @id @default(uuid())
+  name     String
+  avatar   String?
+  workouts Workout[]
+}
+
+model Workout {
+  id           String           @id @default(uuid())
+  name         String
+  description  String?
+  difficulty   String           // Beginner, Intermediate, Advanced
+  duration     Int              // in minutes
+  calories     Int
+  equipment    String[]
+  muscleGroups String[]
+  trainerId    String?
+  trainer      Trainer?         @relation(fields: [trainerId], references: [id])
+  categoryId   String?
+  category     WorkoutCategory? @relation(fields: [categoryId], references: [id])
+  exercises    Exercise[]
+  sessions     WorkoutSession[]
+  histories    WorkoutHistory[]
+  favorites    FavoriteWorkout[]
+  createdAt    DateTime         @default(now())
+}
+
+model Exercise {
+  id           String   @id @default(uuid())
+  name         String
+  sets         Int
+  reps         String
+  weight       Float?   // in kg
+  restTime     Int      // in seconds
+  videoUrl     String?
+  coachTips    String?
+  targetMuscle String
+  workoutId    String
+  workout      Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  order        Int
+}
+
+model WorkoutSession {
+  id        String   @id @default(uuid())
+  workoutId String
+  workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  startedAt DateTime @default(now())
+  status    String   // active, finished, abandoned
+}
+
+model WorkoutHistory {
+  id           String   @id @default(uuid())
+  workoutId    String
+  workout      Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  duration     Int      // in seconds
+  calories     Int
+  completedPct Float
+  date         DateTime @default(now())
+}
+
+model FavoriteWorkout {
+  id        String   @id @default(uuid())
+  workoutId String
+  workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+}

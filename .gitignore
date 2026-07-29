@@ -1,0 +1,19 @@
+# Node / Frontend
+node_modules/
+dist/
+.env.local
+
+# Java / Spring Boot
+target/
+*.class
+*.jar
+
+# IDE & System
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store

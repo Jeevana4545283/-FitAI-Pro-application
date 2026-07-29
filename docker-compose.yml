@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fitaix-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fitaix_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: fitaix-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fitaix-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/fitaix_db?schema=public
+      - REDIS_URL=redis://redis:6379/0
+      - APP_ENV=production
+      - SECRET_KEY=fitaix_premium_super_secure_key_2026_change_me
+    depends_on:
+      - postgres
+      - redis
+
+  frontend-web:
+    build:
+      context: ./frontend/web
+      dockerfile: docker/Dockerfile
+    container_name: fitaix-frontend-web
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  frontend-app:
+    build:
+      context: ./frontend/app
+      dockerfile: docker/Dockerfile
+    container_name: fitaix-frontend-app
+    restart: always
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:

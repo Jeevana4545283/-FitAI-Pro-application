@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0A0A0A;
+    --foreground: #FFFFFF;
+  }
+  
+  body {
+    background-color: #000000;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Custom Scrollbar Hide for mobile views */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+/* Custom premium design system details */
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #F5C400 0%, #FFB300 100%);
+}
+
+.bg-gold-dark-gradient {
+  background: linear-gradient(135deg, #F5C400 0%, #CA8A04 100%);
+}
+
+.bg-hero-workout {
+  background: radial-gradient(circle at 75% 15%, rgba(245, 196, 0, 0.22) 0%, transparent 45%), linear-gradient(160deg, #1c1c1c 0%, #131313 45%, #0a0a0a 100%);
+}
+
+.bg-hero-recovery {
+  background: linear-gradient(120deg, #111111 0%, #191919 100%);
+}
+
+.bg-gold-pale-gradient {
+  background: linear-gradient(135deg, #F5C400 0%, #FDE68A 100%);
+}
+
+.bg-glass {
+  background: rgba(22, 22, 22, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 214, 10, 0.09);
+}
+
+/* Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.animate-blink {
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 3.4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.3)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 14px rgba(250, 204, 21, 0.65)); transform: scale(1.05); }
+}
+
+.animate-breathe {
+  animation: breathe 3.4s ease-in-out infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.9; }
+}
+
+.animate-twinkle {
+  animation: twinkle 2.6s ease-in-out infinite;
+}

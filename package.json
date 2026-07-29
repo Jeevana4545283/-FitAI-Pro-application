@@ -1,0 +1,28 @@
+{
+  "name": "fitaix-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:backend": "cd backend && uvicorn main:app --reload",
+    "dev:web": "cd frontend/web && npm run dev",
+    "dev:app": "cd frontend/app && npm run dev",
+    "build:web": "cd frontend/web && npm run build",
+    "build:app": "cd frontend/app && npm run build",
+    "lint:web": "cd frontend/web && npm run lint",
+    "lint:app": "cd frontend/app && npm run lint",
+    "format:check": "prettier --check \"**/*.{js,ts,tsx,json,md}\"",
+    "format:write": "prettier --write \"**/*.{js,ts,tsx,json,md}\"",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5"
+  },
+  "lint-staged": {
+    "frontend/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
