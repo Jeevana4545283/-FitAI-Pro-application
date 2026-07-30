@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User as UserIcon, Mail, Lock, ArrowRight, Dumbbell, Zap } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, ArrowRight, Dumbbell } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface RegisterProps {
@@ -8,33 +8,31 @@ interface RegisterProps {
 }
 
 export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
-  const { register, quickGuestLogin } = useAuth();
-  const [name, setName] = useState('Athlete');
-  const [email, setEmail] = useState('athlete@fitaix.com');
-  const [password, setPassword] = useState('password123');
-  const [confirmPassword, setConfirmPassword] = useState('password123');
+  const { register } = useAuth();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleQuickGuest = async () => {
-    setIsSubmitting(true);
-    try {
-      await quickGuestLogin();
-      toast.success('Instant Guest Access Granted! Welcome to FitAIX.');
-    } catch (err) {
-      toast.error('Quick access failed');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name || !email || !password) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await register(name, email, password);
-      toast.success('Account created successfully! Welcome to FitAIX.');
+      toast.success('Account created successfully! Please complete your profile.');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Welcome to FitAIX!');
+      const errorMsg = err.response?.data?.detail || 'Registration failed. Try again.';
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -60,24 +58,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
         <div className="bg-app-card border border-white/10 rounded-3xl p-6 shadow-2xl backdrop-blur-xl">
           <div className="mb-4">
             <h2 className="text-lg font-extrabold text-white">Create Account</h2>
-            <p className="text-xs text-white/40 mt-0.5">Simple instant access — no strict credentials required</p>
-          </div>
-
-          {/* ⚡ 1-Tap Quick Guest Access Button */}
-          <button
-            type="button"
-            onClick={handleQuickGuest}
-            disabled={isSubmitting}
-            className="w-full mb-3 bg-gradient-to-r from-[#FFB300] to-[#F5C400] text-black font-extrabold py-3.5 rounded-2xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-gold/25 flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
-          >
-            <Zap className="w-4 h-4 fill-black" />
-            <span>⚡ 1-Tap Instant Guest Access</span>
-          </button>
-
-          <div className="relative flex items-center justify-center my-2">
-            <div className="border-t border-white/10 w-full"></div>
-            <span className="bg-app-card px-2 text-[10px] text-white/40 uppercase font-bold">Or Standard Sign Up</span>
-            <div className="border-t border-white/10 w-full"></div>
+            <p className="text-xs text-white/40 mt-0.5">Register with your name, email and password</p>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
@@ -90,7 +71,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Alex Mercer"
+                  placeholder="Your Full Name"
                   className="w-full bg-[#141414] border border-white/10 rounded-2xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-gold/60 transition"
                   required
                 />
@@ -106,7 +87,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="athlete@fitaix.com"
+                  placeholder="your.email@example.com"
                   className="w-full bg-[#141414] border border-white/10 rounded-2xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-gold/60 transition"
                   required
                 />
@@ -122,7 +103,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 6 characters"
+                  placeholder="Create password"
                   className="w-full bg-[#141414] border border-white/10 rounded-2xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/20 focus:outline-none focus:border-gold/60 transition"
                   required
                 />
@@ -149,7 +130,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="mt-2 w-full bg-gold hover:bg-gold/90 text-[#0a0a0a] font-extrabold py-3.5 rounded-2xl text-sm transition-all shadow-lg shadow-gold/20 flex items-center justify-center gap-2 disabled:opacity-50"
+              className="mt-2 w-full bg-gold hover:bg-gold/90 text-[#0a0a0a] font-extrabold py-3.5 rounded-2xl text-sm transition-all shadow-lg shadow-gold/20 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-[#0a0a0a] border-t-transparent rounded-full animate-spin"></div>
@@ -169,7 +150,7 @@ export const Register: React.FC<RegisterProps> = ({ onNavigate }) => {
           Already registered?{' '}
           <button
             onClick={() => onNavigate('login')}
-            className="text-gold font-bold hover:underline transition"
+            className="text-gold font-bold hover:underline transition cursor-pointer"
           >
             Sign In
           </button>

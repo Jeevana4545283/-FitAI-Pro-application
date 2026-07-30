@@ -7,6 +7,7 @@ try:
     from core.config import settings
     from core.events import register_event_handlers
     from core.exceptions import register_exception_handlers
+    from routes.auth import router as auth_router
     from routes.workouts import router as workouts_router
     from routes.profile import router as profile_router
     from routes.nutrition import router as nutrition_router
@@ -17,6 +18,7 @@ except ImportError:
     from backend.core.config import settings
     from backend.core.events import register_event_handlers
     from backend.core.exceptions import register_exception_handlers
+    from backend.routes.auth import router as auth_router
     from backend.routes.workouts import router as workouts_router
     from backend.routes.profile import router as profile_router
     from backend.routes.nutrition import router as nutrition_router
@@ -58,6 +60,7 @@ register_event_handlers(app)
 register_exception_handlers(app)
 
 # Include routers
+app.include_router(auth_router)
 app.include_router(workouts_router)
 app.include_router(profile_router)
 app.include_router(nutrition_router)

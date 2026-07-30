@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useAppState } from '../context/AppStateContext';
+import api from '../lib/api';
 import { 
-  User, Dumbbell, Activity, HeartPulse, Clock, Calendar, 
-  Moon, Droplet, ArrowRight, ArrowLeft, CheckCircle2, ShieldAlert
+  User, Dumbbell, Activity, HeartPulse, 
+  ArrowRight, ArrowLeft, CheckCircle2 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export interface ComprehensiveProfile {
   name: string;
   age: number;
-  gender: 'Male' | 'Female' | 'Other';
+  gender: string;
   height: number;
   weight: number;
   fitnessGoal: string;
-  experienceLevel: 'Beginner' | 'Intermediate' | 'Advanced';
+  experience: 'Beginner' | 'Intermediate' | 'Advanced';
   workoutPreference: 'Gym' | 'Home' | 'Both';
-  dailyAvailableTime: string;
+  availableTime: number;
   weeklyDays: number;
   hasPastInjuries: boolean;
   injuryDetails: string;
@@ -32,6 +33,7 @@ export const Onboarding: React.FC = () => {
   const { updateProfile, toggleGoal, toggleEquipment } = useAppState();
 
   const [step, setStep] = useState<number>(1);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Form State
   const [formData, setFormData] = useState<ComprehensiveProfile>({
@@ -41,9 +43,9 @@ export const Onboarding: React.FC = () => {
     height: 175,
     weight: 70,
     fitnessGoal: 'Muscle Gain',
-    experienceLevel: 'Intermediate',
+    experience: 'Intermediate',
     workoutPreference: 'Gym',
-    dailyAvailableTime: '45 min',
+    availableTime: 45,
     weeklyDays: 4,
     hasPastInjuries: false,
     injuryDetails: '',
@@ -55,7 +57,7 @@ export const Onboarding: React.FC = () => {
   });
 
   const handleNext = () => {
-    if (step === 1 && !formData.name) {
+    if (step === 1 && !formData.name.trim()) {
       toast.error('Please enter your full name');
       return;
     }
@@ -75,30 +77,61 @@ export const Onboarding: React.FC = () => {
     });
   };
 
-  const handleFinish = () => {
-    // 1. Save locally in localStorage
-    localStorage.setItem('fitaix_profile_data', JSON.stringify(formData));
+  const handleFinish = async () => {
+    setIsSubmitting(true);
+    try {
+      const pastInjuriesList = formData.hasPastInjuries && formData.injuryDetails.trim()
+        ? [formData.injuryDetails.trim()]
+        : [];
+      const medicalConditionsList = formData.medicalConditions.trim()
+        ? [formData.medicalConditions.trim()]
+        : [];
 
-    // 2. Sync to AppStateContext
-    updateProfile({
-      name: formData.name,
-      age: formData.age,
-      gender: formData.gender,
-      height: formData.height,
-      weight: formData.weight,
-      experience: formData.experienceLevel,
-      gymHome: formData.workoutPreference === 'Home' ? 'home' : 'gym',
-    });
+      // 1. Save profile information to PostgreSQL backend
+      await api.put('/profile', {
+        userId: user?.userId,
+        name: formData.name,
+        age: formData.age,
+        gender: formData.gender,
+        height: formData.height,
+        weight: formData.weight,
+        fitnessGoal: formData.fitnessGoal,
+        experience: formData.experience,
+        workoutPreference: formData.workoutPreference,
+        availableTime: formData.availableTime,
+        weeklyDays: formData.weeklyDays,
+        pastInjuries: pastInjuriesList,
+        medicalConditions: medicalConditionsList,
+        sleepHours: formData.sleepHours,
+        waterIntake: formData.waterIntake,
+        activityLevel: formData.activityLevel,
+        equipment: formData.equipment
+      });
 
-    // Sync Goals
-    toggleGoal(formData.fitnessGoal);
+      // 2. Sync to AppStateContext locally
+      updateProfile({
+        name: formData.name,
+        age: formData.age,
+        gender: formData.gender,
+        height: formData.height,
+        weight: formData.weight,
+        experience: formData.experience,
+        gymHome: formData.workoutPreference === 'Home' ? 'home' : 'gym',
+      });
 
-    // Sync Equipment
-    formData.equipment.forEach((eq) => toggleEquipment(eq));
+      toggleGoal(formData.fitnessGoal);
+      formData.equipment.forEach((eq) => toggleEquipment(eq));
 
-    // 3. Mark Onboarding as Completed
-    completeOnboarding();
-    toast.success(`Profile customized! Welcome to FitAIX, ${formData.name.split(' ')[0]} 👋`);
+      // 3. Mark Onboarding as Completed
+      completeOnboarding();
+      toast.success(`Profile customized! Welcome to FitAIX, ${formData.name.split(' ')[0]} 👋`);
+    } catch (err: any) {
+      // Fallback local completion if network issue
+      completeOnboarding();
+      toast.success(`Welcome to FitAIX, ${formData.name.split(' ')[0]} 👋`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -158,7 +191,7 @@ export const Onboarding: React.FC = () => {
                     <label className="text-xs font-semibold text-white/70 block mb-1">Gender</label>
                     <select
                       value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as any })}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                       className="w-full bg-[#141414] border border-white/10 rounded-2xl py-2.5 px-2 text-xs text-white focus:border-gold/60 focus:outline-none font-bold"
                     >
                       <option value="Male">Male</option>
@@ -199,7 +232,7 @@ export const Onboarding: React.FC = () => {
                 <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
                   <Activity className="w-5 h-5 text-gold" /> Fitness & Workouts
                 </h2>
-                <p className="text-xs text-white/40 mt-0.5">Customize your AI training preferences</p>
+                <p className="text-xs text-white/40 mt-0.5">Customize your training preferences</p>
               </div>
 
               <div className="flex flex-col gap-3">
@@ -221,8 +254,8 @@ export const Onboarding: React.FC = () => {
                   <div>
                     <label className="text-xs font-semibold text-white/70 block mb-1">Experience</label>
                     <select
-                      value={formData.experienceLevel}
-                      onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value as any })}
+                      value={formData.experience}
+                      onChange={(e) => setFormData({ ...formData, experience: e.target.value as any })}
                       className="w-full bg-[#141414] border border-white/10 rounded-2xl py-2.5 px-2 text-xs text-white focus:border-gold/60 font-bold"
                     >
                       <option value="Beginner">Beginner</option>
@@ -231,7 +264,7 @@ export const Onboarding: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-white/70 block mb-1">Location</label>
+                    <label className="text-xs font-semibold text-white/70 block mb-1">Preference</label>
                     <select
                       value={formData.workoutPreference}
                       onChange={(e) => setFormData({ ...formData, workoutPreference: e.target.value as any })}
@@ -246,18 +279,13 @@ export const Onboarding: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs font-semibold text-white/70 block mb-1">Daily Time</label>
-                    <select
-                      value={formData.dailyAvailableTime}
-                      onChange={(e) => setFormData({ ...formData, dailyAvailableTime: e.target.value })}
-                      className="w-full bg-[#141414] border border-white/10 rounded-2xl py-2.5 px-2 text-xs text-white focus:border-gold/60 font-bold"
-                    >
-                      <option value="15 min">15 min</option>
-                      <option value="30 min">30 min</option>
-                      <option value="45 min">45 min</option>
-                      <option value="60 min">60 min</option>
-                      <option value="90+ min">90+ min</option>
-                    </select>
+                    <label className="text-xs font-semibold text-white/70 block mb-1">Daily Time (min)</label>
+                    <input
+                      type="number"
+                      value={formData.availableTime}
+                      onChange={(e) => setFormData({ ...formData, availableTime: Number(e.target.value) })}
+                      className="w-full bg-[#141414] border border-white/10 rounded-2xl py-2.5 px-3 text-xs text-white text-center font-bold"
+                    />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-white/70 block mb-1">Weekly Days</label>
@@ -283,7 +311,7 @@ export const Onboarding: React.FC = () => {
                 <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
                   <HeartPulse className="w-5 h-5 text-gold" /> Medical & Lifestyle
                 </h2>
-                <p className="text-xs text-white/40 mt-0.5">Ensure safe AI exercise generation</p>
+                <p className="text-xs text-white/40 mt-0.5">Ensure safe exercise recommendations</p>
               </div>
 
               <div className="flex flex-col gap-3">
@@ -328,6 +356,7 @@ export const Onboarding: React.FC = () => {
                     <label className="text-xs font-semibold text-white/70 block mb-1">Sleep (Hours)</label>
                     <input
                       type="number"
+                      step="0.5"
                       value={formData.sleepHours}
                       onChange={(e) => setFormData({ ...formData, sleepHours: Number(e.target.value) })}
                       className="w-full bg-[#141414] border border-white/10 rounded-2xl py-2 px-3 text-xs text-white text-center font-bold"
@@ -389,7 +418,7 @@ export const Onboarding: React.FC = () => {
                       key={item}
                       type="button"
                       onClick={() => toggleEquipmentSelection(item)}
-                      className={`p-3 rounded-2xl text-xs font-bold border transition text-left flex items-center justify-between ${
+                      className={`p-3 rounded-2xl text-xs font-bold border transition text-left flex items-center justify-between cursor-pointer ${
                         isSelected
                           ? 'bg-gold/20 border-gold text-gold shadow-md shadow-gold/10'
                           : 'bg-[#141414] border-white/5 text-white/60 hover:text-white'
@@ -410,7 +439,8 @@ export const Onboarding: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex-1 bg-white/5 border border-white/10 text-white font-extrabold py-3 rounded-2xl text-xs flex items-center justify-center gap-1 hover:bg-white/10 transition"
+                disabled={isSubmitting}
+                className="flex-1 bg-white/5 border border-white/10 text-white font-extrabold py-3 rounded-2xl text-xs flex items-center justify-center gap-1 hover:bg-white/10 transition cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" /> Back
               </button>
@@ -420,7 +450,7 @@ export const Onboarding: React.FC = () => {
               <button
                 type="button"
                 onClick={handleNext}
-                className="flex-1 bg-gold text-[#0a0a0a] font-extrabold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-1 shadow-lg shadow-gold/20 hover:bg-gold/90 transition"
+                className="flex-1 bg-gold text-[#0a0a0a] font-extrabold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-1 shadow-lg shadow-gold/20 hover:bg-gold/90 transition cursor-pointer"
               >
                 Next <ArrowRight className="w-4 h-4" />
               </button>
@@ -428,9 +458,16 @@ export const Onboarding: React.FC = () => {
               <button
                 type="button"
                 onClick={handleFinish}
-                className="flex-1 bg-gold text-[#0a0a0a] font-extrabold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-1 shadow-lg shadow-gold/20 hover:bg-gold/90 transition uppercase tracking-wider"
+                disabled={isSubmitting}
+                className="flex-1 bg-gold text-[#0a0a0a] font-extrabold py-3.5 rounded-2xl text-xs flex items-center justify-center gap-1 shadow-lg shadow-gold/20 hover:bg-gold/90 transition uppercase tracking-wider disabled:opacity-50 cursor-pointer"
               >
-                Complete Profile <CheckCircle2 className="w-4 h-4" />
+                {isSubmitting ? (
+                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    Complete Profile <CheckCircle2 className="w-4 h-4" />
+                  </>
+                )}
               </button>
             )}
           </div>
